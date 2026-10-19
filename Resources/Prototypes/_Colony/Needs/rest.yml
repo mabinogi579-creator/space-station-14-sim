@@ -1,0 +1,19 @@
+- type: alertCategory
+  id: Rest
+
+- type: satiationType
+  id: Rest
+  name: satiation-type-rest
+
+- type: satiation
+  id: NormalSatiationRest
+  baseChangeRate: -0.5 # deliberately fast, so we can see it move while testing
+  maximumValue: 100
+  alertCategory: Rest
+  thresholds:
+    Rested: 100
+    Okay: 60
+    Tired: 30
+    Exhausted: 0
+  startingValueMinimum: Tired
+  startingValueMaximum: Rested

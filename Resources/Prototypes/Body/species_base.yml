@@ -177,6 +177,8 @@
         prototype: NormalSatiationHunger
       Thirst:
         prototype: NormalSatiationThirst
+      Rest:
+        prototype: NormalSatiationRest  
   - type: Barotrauma
     damage:
       types:
