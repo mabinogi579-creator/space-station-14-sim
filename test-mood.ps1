@@ -18,24 +18,46 @@ Write-Host "Build OK." -ForegroundColor Green
 
 Write-Host ""
 Write-Host "Scenario: $Scenario" -ForegroundColor Yellow
-Write-Host "3/3 Starting the server. The game window opens in about 12 seconds." -ForegroundColor Cyan
+Write-Host "3/3 Starting the server. The game window opens as soon as the server is ready." -ForegroundColor Cyan
 Write-Host "    The station is always Box Station (set by the --cvar game.map=Box launch option)." -ForegroundColor Cyan
 Write-Host "    Join the round, then open the in-game console and try:" -ForegroundColor Cyan
 Write-Host "      setsatiation Hunger 80   (expect: Hungry -10)" -ForegroundColor Cyan
 Write-Host "      setsatiation Rest 20     (expect: Tired -10)" -ForegroundColor Cyan
 Write-Host "      setsatiation Rest 5      (expect: Exhausted -25)" -ForegroundColor Cyan
 Write-Host "    Mood lines appear below within a second or two. Errors show in red." -ForegroundColor Cyan
-Write-Host "    Close this window to stop the server. Full log: server.log" -ForegroundColor Cyan
+Write-Host "    Press Ctrl+C in this window to stop the server. Full log: server.log" -ForegroundColor Cyan
 Write-Host ""
 
-Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-Command", "Start-Sleep 12; dotnet run --project Content.Client --no-build"
+Remove-Item server.log, server.err -ErrorAction SilentlyContinue
+Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-Command", "while (-not ((Test-Path server.log) -and (Select-String -Path server.log -Pattern '-> Ready' -Quiet -ErrorAction SilentlyContinue))) { Start-Sleep 1 }; dotnet run --project Content.Client --no-build"
 
-dotnet run --project Content.Server --no-build -- --cvar game.map=Box --cvar colony.scenario=$Scenario 2>&1 | Tee-Object -FilePath server.log | ForEach-Object {
-    $line = "$_"
-    if ($line -match "\[ERRO\]") {
-        Write-Host $line -ForegroundColor Red
+# The server runs in a hidden window, so stray key presses can never crash it.
+$server = Start-Process dotnet -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru `
+    -RedirectStandardOutput server.log -RedirectStandardError server.err `
+    -ArgumentList "run --project Content.Server --no-build -- --cvar game.map=Box --cvar colony.scenario=$Scenario"
+
+function Show-Line($line) {
+    if ($line -match "\[ERRO\]|\[FATL\]") { Write-Host $line -ForegroundColor Red }
+    elseif ($line -match "system\.mood|system\.colony|Server Version") { Write-Host $line -ForegroundColor Green }
+}
+
+try {
+    while (-not (Test-Path server.log)) { Start-Sleep -Milliseconds 200 }
+    $fs = [System.IO.FileStream]::new("$PSScriptRoot\server.log", 'Open', 'Read', 'ReadWrite')
+    $reader = [System.IO.StreamReader]::new($fs)
+    while ($true) {
+        while (($line = $reader.ReadLine()) -ne $null) { Show-Line $line }
+        if ($server.HasExited) { break }
+        Start-Sleep -Milliseconds 500
     }
-    elseif ($line -match "system\.mood|system\.colony|Server Version") {
-        Write-Host $line -ForegroundColor Green
+    while (($line = $reader.ReadLine()) -ne $null) { Show-Line $line }
+    Write-Host "The server stopped." -ForegroundColor Yellow
+    if ((Test-Path server.err) -and (Get-Item server.err).Length -gt 0) {
+        Write-Host "Server error output:" -ForegroundColor Red
+        Get-Content server.err -TotalCount 15 | ForEach-Object { Write-Host $_ -ForegroundColor Red }
     }
+}
+finally {
+    if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+    Get-Process Content.Server -ErrorAction SilentlyContinue | Stop-Process -Force
 }

@@ -1,4 +1,6 @@
 using Content.Server.GameTicking;
+using Content.Server.NPC.HTN;
+using Content.Server.NPC.Systems;
 using Content.Shared._Colony.Setup;
 using Content.Shared.GameTicking;
 using Content.Shared.Preferences;
@@ -23,6 +25,8 @@ public sealed class ColonySetupSystem : EntitySystem
 
     [Dependency] private PvsOverrideSystem _pvs = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
+
+    [Dependency] private NPCSystem _npc = default!;
 
     private bool _crewSpawned;
     private EntityUid? _firstColonist;
@@ -58,6 +62,11 @@ public sealed class ColonySetupSystem : EntitySystem
             && Exists(first))
         {
             _transform.SetCoordinates(overseer, Transform(first).Coordinates);
+            Log.Info($"Moved overseer {ToPrettyString(overseer)} next to {ToPrettyString(first)}");
+        }
+        else
+        {
+            Log.Warning($"Could not move the overseer (attached: {ev.Player.AttachedEntity}, first colonist: {_firstColonist})");
         }
         ev.Handled = true;
     }
@@ -87,6 +96,13 @@ public sealed class ColonySetupSystem : EntitySystem
                 }
 
                 crew.Add(mob.Value);
+
+                // Give them a brain: eat when hungry, otherwise wander.
+                var brain = EnsureComp<HTNComponent>(mob.Value);
+                brain.RootTask = new HTNCompoundTask { Task = "ColonistCompound" };
+
+                // Brains added after a mob is created don't start by themselves, so switch it on.
+                _npc.WakeNPC(mob.Value, brain);
                 _firstColonist ??= mob.Value;
 
                 // Always send colonists to the player, however far away the camera is.

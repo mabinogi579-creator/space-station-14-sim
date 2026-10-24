@@ -1,0 +1,110 @@
+# The base brain every colonist gets.
+# Order of priority: eat, drink, then wander.
+#
+# Eating tries three things in turn:
+#  1. food or a drink lying around in the open,
+#  2. a working vending machine that sells it,
+#  3. nothing found, so the colonist just carries on wandering.
+
+- type: htnCompound
+  id: ColonistCompound
+  branches:
+    - tasks:
+        - !type:HTNCompoundTask
+          task: ColonistEatCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: ColonistDrinkCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: IdleCompound
+
+- type: htnCompound
+  id: ColonistEatCompound
+  branches:
+    # Food lying around.
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Hunger
+          below: Peckish
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickLooseEdibleOperator
+            edibleType: Food
+        - !type:HTNCompoundTask
+          task: ColonistWalkAndEatCompound
+    # Buy something from a vending machine. The next planning round finds the dropped item.
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Hunger
+          below: Peckish
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickVendingMachineOperator
+            edibleType: Food
+        - !type:HTNCompoundTask
+          task: ColonistWalkAndVendCompound
+
+- type: htnCompound
+  id: ColonistDrinkCompound
+  branches:
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Thirst
+          below: Parched
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickLooseEdibleOperator
+            edibleType: Drink
+        - !type:HTNCompoundTask
+          task: ColonistWalkAndEatCompound
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Thirst
+          below: Parched
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickVendingMachineOperator
+            edibleType: Drink
+        - !type:HTNCompoundTask
+          task: ColonistWalkAndVendCompound
+
+- type: htnCompound
+  id: ColonistWalkAndEatCompound
+  branches:
+    - tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: MeleeRange
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistEatOperator
+        - !type:HTNPrimitiveTask
+          preconditions:
+            - !type:KeyExistsPrecondition
+              key: IdleTime
+          operator: !type:WaitOperator
+            key: IdleTime
+
+- type: htnCompound
+  id: ColonistWalkAndVendCompound
+  branches:
+    - tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: InteractRange
+        - !type:HTNPrimitiveTask
+          operator: !type:UseVendingMachineOperator
+        - !type:HTNPrimitiveTask
+          preconditions:
+            - !type:KeyExistsPrecondition
+              key: IdleTime
+          operator: !type:WaitOperator
+            key: IdleTime
