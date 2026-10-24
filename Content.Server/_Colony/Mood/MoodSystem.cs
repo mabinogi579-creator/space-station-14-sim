@@ -54,9 +54,11 @@ public sealed class MoodSystem : EntitySystem
             colonists++;
             var entity = new Entity<SatiationComponent>(uid, satiations);
 
+            var oldMood = mood.Mood;
             RefreshNeedThoughts(entity, mood);
             ExpireEventThoughts(mood);
             mood.Mood = CalculateMood(mood);
+            UpdateDisplay(uid, mood, oldMood);
 
             LogIfChanged(uid, entity, mood);
         }
@@ -127,6 +129,38 @@ public sealed class MoodSystem : EntitySystem
         {
             mood.EventThoughts.Remove(id);
         }
+    }
+
+    /// <summary>
+    /// Builds the list that clients show in the mood window, and sends it only when something changed.
+    /// </summary>
+    private void UpdateDisplay(EntityUid uid, ColonyMoodComponent mood, float oldMood)
+    {
+        var display = new List<MoodThoughtEntry>();
+
+        foreach (var id in mood.NeedThoughts)
+        {
+            if (ProtoMan.Resolve(id, out var thought))
+                display.Add(new MoodThoughtEntry(thought.Label, thought.MoodEffect, TimeSpan.Zero));
+        }
+
+        foreach (var (id, expiry) in mood.EventThoughts)
+        {
+            if (ProtoMan.Resolve(id, out var thought))
+                display.Add(new MoodThoughtEntry(thought.Label, thought.MoodEffect, expiry));
+        }
+
+        var same = display.Count == mood.Display.Count && Math.Abs(oldMood - mood.Mood) < 0.001f;
+        for (var i = 0; same && i < display.Count; i++)
+        {
+            same = display[i].Equals(mood.Display[i]);
+        }
+
+        if (same)
+            return;
+
+        mood.Display = display;
+        Dirty(uid, mood);
     }
 
     private float CalculateMood(ColonyMoodComponent mood)
