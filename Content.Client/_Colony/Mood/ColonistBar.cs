@@ -22,6 +22,7 @@ public sealed class ColonistBar : BoxContainer
 
     private readonly IEntityManager _entMan;
     private readonly Action<EntityUid> _onClick;
+    private bool _built;
     private readonly List<EntityUid> _shown = new();
     private readonly Dictionary<EntityUid, ProgressBar> _bars = new();
 
@@ -45,7 +46,7 @@ public sealed class ColonistBar : BoxContainer
 
         current.Sort();
 
-        if (!System.Linq.Enumerable.SequenceEqual(current, _shown))
+        if (!_built || !System.Linq.Enumerable.SequenceEqual(current, _shown))
             Rebuild(current);
 
         // Keep the mood bars fresh.
@@ -61,10 +62,18 @@ public sealed class ColonistBar : BoxContainer
 
     private void Rebuild(List<EntityUid> colonists)
     {
+        _built = true;
         RemoveAllChildren();
         _bars.Clear();
         _shown.Clear();
         _shown.AddRange(colonists);
+
+        // So you can tell the bar itself is working even when nobody is in range yet.
+        if (colonists.Count == 0)
+        {
+            AddChild(new Label { Text = "Colonists: none in view" });
+            return;
+        }
 
         foreach (var uid in colonists)
         {

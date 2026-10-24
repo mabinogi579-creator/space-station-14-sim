@@ -1,4 +1,5 @@
 # One-click test for the colony mood system. Run it by double-clicking test-mood.bat.
+param([string]$Scenario = "SmallCrew")
 Set-Location $PSScriptRoot
 
 Write-Host "1/3 Stopping any old server or client..." -ForegroundColor Cyan
@@ -16,7 +17,9 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Build OK." -ForegroundColor Green
 
 Write-Host ""
+Write-Host "Scenario: $Scenario" -ForegroundColor Yellow
 Write-Host "3/3 Starting the server. The game window opens in about 12 seconds." -ForegroundColor Cyan
+Write-Host "    The station is always Box Station (set by the --cvar game.map=Box launch option)." -ForegroundColor Cyan
 Write-Host "    Join the round, then open the in-game console and try:" -ForegroundColor Cyan
 Write-Host "      setsatiation Hunger 80   (expect: Hungry -10)" -ForegroundColor Cyan
 Write-Host "      setsatiation Rest 20     (expect: Tired -10)" -ForegroundColor Cyan
@@ -27,12 +30,12 @@ Write-Host ""
 
 Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-Command", "Start-Sleep 12; dotnet run --project Content.Client --no-build"
 
-dotnet run --project Content.Server --no-build 2>&1 | Tee-Object -FilePath server.log | ForEach-Object {
+dotnet run --project Content.Server --no-build -- --cvar game.map=Box --cvar colony.scenario=$Scenario 2>&1 | Tee-Object -FilePath server.log | ForEach-Object {
     $line = "$_"
     if ($line -match "\[ERRO\]") {
         Write-Host $line -ForegroundColor Red
     }
-    elseif ($line -match "system\.mood|Server Version") {
+    elseif ($line -match "system\.mood|system\.colony|Server Version") {
         Write-Host $line -ForegroundColor Green
     }
 }
