@@ -1,0 +1,39 @@
+- type: thought
+  id: ThoughtHungry
+  label: Hungry
+  moodEffect: -10
+
+- type: thought
+  id: ThoughtStarving
+  label: Starving
+  moodEffect: -25
+
+- type: thought
+  id: ThoughtTired
+  label: Tired
+  moodEffect: -10
+
+- type: thought
+  id: ThoughtExhausted
+  label: Exhausted
+  moodEffect: -25
+
+- type: needThoughts
+  id: HungerThoughts
+  need: Hunger
+  thoughts:
+    Peckish: ThoughtHungry
+    Starving: ThoughtStarving
+
+- type: needThoughts
+  id: RestThoughts
+  need: Rest
+  thoughts:
+    Tired: ThoughtTired
+    Exhausted: ThoughtExhausted
+
+- type: thought
+  id: ThoughtAteMeal
+  label: Ate a meal
+  moodEffect: 8
+  duration: 120s

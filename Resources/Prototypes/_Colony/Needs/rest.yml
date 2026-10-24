@@ -14,6 +14,7 @@
     Rested: 100
     Okay: 60
     Tired: 30
-    Exhausted: 0
+    Exhausted: 10
+    Collapsed: 0
   startingValueMinimum: Tired
   startingValueMaximum: Rested

@@ -178,7 +178,8 @@
       Thirst:
         prototype: NormalSatiationThirst
       Rest:
-        prototype: NormalSatiationRest  
+        prototype: NormalSatiationRest
+  - type: ColonyMood        
   - type: Barotrauma
     damage:
       types:
