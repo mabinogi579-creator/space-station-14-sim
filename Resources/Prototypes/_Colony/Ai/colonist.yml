@@ -1,5 +1,5 @@
 # The base brain every colonist gets.
-# Order of priority: eat, drink, then wander.
+# Order of priority: eat, drink, sleep, have fun, then wander.
 #
 # Eating tries three things in turn:
 #  1. food or a drink lying around in the open,
@@ -15,6 +15,12 @@
     - tasks:
         - !type:HTNCompoundTask
           task: ColonistDrinkCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: ColonistSleepCompound
+    - tasks:
+        - !type:HTNCompoundTask
+          task: ColonistRecreationCompound
     - tasks:
         - !type:HTNCompoundTask
           task: IdleCompound
@@ -177,3 +183,47 @@
               key: IdleTime
           operator: !type:WaitOperator
             key: IdleTime
+
+# Tired: find a bed (or drop on the floor), sleep until rested, then get up.
+- type: htnCompound
+  id: ColonistSleepCompound
+  branches:
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Rest
+          below: Tired
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickRestSpotOperator
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: MeleeRange
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistSleepOperator
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistStandUpOperator
+
+# Bored: go and play with a machine, or chat with someone.
+- type: htnCompound
+  id: ColonistRecreationCompound
+  branches:
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Recreation
+          below: Bored
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickRecreationOperator
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: InteractRange
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistPlayOperator

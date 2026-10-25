@@ -1,5 +1,6 @@
 using Content.Server.GameTicking;
 using Content.Server.NPC.HTN;
+using Content.Server._Colony.Traits;
 using Content.Server.NPC.Systems;
 using Content.Shared._Colony.Diet;
 using Content.Shared._Colony.Setup;
@@ -28,6 +29,7 @@ public sealed class ColonySetupSystem : EntitySystem
     [Dependency] private SharedTransformSystem _transform = default!;
 
     [Dependency] private NPCSystem _npc = default!;
+    [Dependency] private ColonyTraitSystem _traits = default!;
 
     private bool _crewSpawned;
     private EntityUid? _firstColonist;
@@ -99,6 +101,13 @@ public sealed class ColonySetupSystem : EntitySystem
                 crew.Add(mob.Value);
                 EnsureComp<ColonyDietComponent>(mob.Value);
 
+                // Give them a Recreation need (the vanilla ones don't include one).
+                if (ProtoMan.TryIndex<EntityPrototype>("ColonyNeedsGrant", out var needs))
+                    EntityManager.AddComponents(mob.Value, needs.Components);
+                else
+                    Log.Warning("ColonyNeedsGrant prototype missing, colonists get no Recreation need.");
+                _traits.Assign(mob.Value);
+
                 // Give them a brain: eat when hungry, otherwise wander.
                 var brain = EnsureComp<HTNComponent>(mob.Value);
                 brain.RootTask = new HTNCompoundTask { Task = "ColonistCompound" };
@@ -109,7 +118,7 @@ public sealed class ColonySetupSystem : EntitySystem
 
                 // Always send colonists to the player, however far away the camera is.
                 _pvs.AddGlobalOverride(mob.Value);
-                Log.Info($"Spawned {ToPrettyString(mob.Value)} as {job}");
+                Log.Info($"Spawned {ToPrettyString(mob.Value)} as {job} ({_traits.Describe(mob.Value)})");
             }
         }
 

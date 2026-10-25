@@ -34,6 +34,9 @@ public sealed partial class ResizableChatBox : ChatBox
 
         public Action<Vector2>? OnChatResizeFinish;
 
+        /// <summary>Colony: set to false to keep the box where its screen put it (no dragging, no clamping).</summary>
+        public bool Resizable = true;
+
         protected override void EnteredTree()
         {
             base.EnteredTree();
@@ -50,7 +53,7 @@ public sealed partial class ResizableChatBox : ChatBox
 
         protected override void KeyBindDown(GUIBoundKeyEventArgs args)
         {
-            if (args.Function == EngineKeyFunctions.UIClick)
+            if (Resizable && args.Function == EngineKeyFunctions.UIClick)
             {
                 _currentDrag = GetDragModeFor(args.RelativePosition);
 
@@ -114,7 +117,7 @@ public sealed partial class ResizableChatBox : ChatBox
         {
             base.MouseMove(args);
 
-            if (Parent == null)
+            if (!Resizable || Parent == null)
                 return;
 
             if (_currentDrag == DragMode.None)
@@ -194,7 +197,7 @@ public sealed partial class ResizableChatBox : ChatBox
 
         private void ClampSize(float? desiredLeft = null, float? desiredBottom = null)
         {
-            if (Parent == null)
+            if (!Resizable || Parent == null)
                 return;
 
             // var top = Rect.Top;

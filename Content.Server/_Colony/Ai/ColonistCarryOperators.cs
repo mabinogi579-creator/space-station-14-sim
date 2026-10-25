@@ -277,6 +277,7 @@ public sealed partial class ColonistEatHeldOperator : HTNOperator
             return HTNOperatorStatus.Failed;
         }
 
+        ColonyAiLog.Sound(_ent, owner, "*munch munch*");
         ColonyAiLog.Action(_ent, owner, sat ? $"{who} sits down with the {what}" : $"{who} settles in to eat the {what}");
         blackboard.SetValue("IdleTime", 6f);
         return HTNOperatorStatus.Finished;

@@ -37,3 +37,46 @@
   label: Ate a meal
   moodEffect: 8
   duration: 120s
+
+# --- Recreation and sleep ---
+
+- type: thought
+  id: ThoughtBored
+  label: Bored
+  moodEffect: -8
+
+- type: thought
+  id: ThoughtRestless
+  label: Restless
+  moodEffect: -20
+
+- type: needThoughts
+  id: RecreationThoughts
+  need: Recreation
+  thoughts:
+    Bored: ThoughtBored
+    Restless: ThoughtRestless
+
+- type: thought
+  id: ThoughtHadFun
+  label: Had some fun
+  moodEffect: 10
+  duration: 240s
+
+- type: thought
+  id: ThoughtChatted
+  label: Had a good chat
+  moodEffect: 6
+  duration: 180s
+
+- type: thought
+  id: ThoughtSleptInBed
+  label: Slept in a bed
+  moodEffect: 8
+  duration: 240s
+
+- type: thought
+  id: ThoughtSleptOnFloor
+  label: Slept on the floor
+  moodEffect: -5
+  duration: 240s

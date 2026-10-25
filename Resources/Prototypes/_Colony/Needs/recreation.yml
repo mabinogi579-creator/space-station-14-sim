@@ -1,0 +1,34 @@
+# Recreation: how entertained a colonist is. Drains slowly, refills by playing, listening to music or chatting.
+
+- type: alertCategory
+  id: Recreation
+
+- type: satiationType
+  id: Recreation
+  name: satiation-type-recreation
+
+- type: satiation
+  id: NormalSatiationRecreation
+  baseChangeRate: -0.04 # about 40 minutes from full to empty. Make this bigger (-0.5) to test quickly
+  maximumValue: 100
+  alertCategory: Recreation
+  thresholds:
+    Entertained: 100
+    Okay: 60
+    Bored: 30
+    Restless: 10
+    Despondent: 0
+  startingValueMinimum: Bored
+  startingValueMaximum: Entertained
+
+# Not a real object: a bundle of components that ColonySetupSystem adds to every colonist
+# so they get a Recreation need on top of the vanilla ones.
+- type: entity
+  id: ColonyNeedsGrant
+  name: colony needs grant
+  categories: [ HideSpawnMenu ]
+  components:
+    - type: SatiationGrant
+      satiation:
+        Recreation:
+          prototype: NormalSatiationRecreation

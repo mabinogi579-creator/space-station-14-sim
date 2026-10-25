@@ -1,4 +1,5 @@
 using Content.Server._Colony.Log;
+using Content.Server._Colony.Traits;
 using Content.Server.NPC;
 using Content.Shared._Colony.Log;
 using System.Threading;
@@ -39,6 +40,12 @@ internal static class ColonyAiLog
     public static void Action(IEntityManager ent, EntityUid who, string text)
     {
         ent.System<ColonyLogSystem>().Add(who, ColonyLogCategory.Action, text);
+    }
+
+    /// <summary>Adds an SS13-style sound line ("*clunk*") to the Colony Log panel.</summary>
+    public static void Sound(IEntityManager ent, EntityUid who, string text)
+    {
+        ent.System<ColonyLogSystem>().Add(who, ColonyLogCategory.Sound, text);
     }
 
     public static string NameOf(IEntityManager ent, EntityUid uid)
@@ -94,10 +101,12 @@ internal static class ColonyAiLog
     private static readonly Dictionary<EntityUid, long> WaitStart = new();
 
     /// <summary>How long a colonist will stand in line before giving up. Traits will change this later.</summary>
-    public static float PatienceOf(EntityUid who) => 12f + (who.Id % 7) * 2f;
+    public static float PatienceOf(IEntityManager ent, EntityUid who) =>
+        (12f + (who.Id % 7) * 2f) * ent.System<ColonyTraitSystem>().PatienceMultiplier(who);
 
     /// <summary>How long a colonist keeps the machine busy. Traits will change this later (clumsy, slow, quick...).</summary>
-    public static float UseDelayOf(EntityUid who) => 3f;
+    public static float UseDelayOf(IEntityManager ent, EntityUid who) =>
+        3f * ent.System<ColonyTraitSystem>().UseTimeMultiplier(who);
 
     /// <summary>Join the line for a machine. Returns false if the line is already full.</summary>
     public static bool TryJoinQueue(IEntityManager ent, EntityUid machine, EntityUid who)
@@ -492,7 +501,7 @@ public sealed partial class UseVendingMachineOperator : HTNOperator
         // Someone else is at the machine: wait in line, but not forever.
         if (ColonyAiLog.IsBusyWithOther(_ent, machine, owner))
         {
-            if (ColonyAiLog.WaitedFor(owner) > ColonyAiLog.PatienceOf(owner))
+            if (ColonyAiLog.WaitedFor(owner) > ColonyAiLog.PatienceOf(_ent, owner))
             {
                 ColonyAiLog.LeaveQueue(machine, owner);
                 ColonyAiLog.Ignore(owner, machine);
@@ -512,11 +521,12 @@ public sealed partial class UseVendingMachineOperator : HTNOperator
             ColonyAiLog.Info($"{_ent.ToPrettyString(owner)} buying {item} from {_ent.ToPrettyString(machine)}");
             ColonyAiLog.Action(_ent, owner, $"{ColonyAiLog.NameOf(_ent, owner)} buys something from {ColonyAiLog.NameOf(_ent, machine)}");
             _vending.AuthorizedVend(machine, owner, InventoryType.Regular, item, vendingComp);
+            ColonyAiLog.Sound(_ent, owner, $"*clunk* Something drops out of the {ColonyAiLog.NameOf(_ent, machine)}.");
             return HTNOperatorStatus.Continuing;
         }
 
         // Keep the machine busy while they fumble with the buttons and pick up the snack.
-        if (served < ColonyAiLog.UseDelayOf(owner))
+        if (served < ColonyAiLog.UseDelayOf(_ent, owner))
             return HTNOperatorStatus.Continuing;
 
         ColonyAiLog.LeaveQueue(machine, owner);

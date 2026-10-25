@@ -1,5 +1,5 @@
 # One-click test for the colony mood system. Run it by double-clicking test-mood.bat.
-param([string]$Scenario = "SmallCrew")
+param([string]$Scenario = "SmallCrew", [string]$Map = "Box")
 Set-Location $PSScriptRoot
 
 Write-Host "1/3 Stopping any old server or client..." -ForegroundColor Cyan
@@ -25,9 +25,9 @@ if (-not $serverOk) {
 Write-Host "Build OK." -ForegroundColor Green
 
 Write-Host ""
-Write-Host "Scenario: $Scenario" -ForegroundColor Yellow
+Write-Host "Scenario: $Scenario    Map: $Map" -ForegroundColor Yellow
 Write-Host "3/3 Starting the server. The game window opens as soon as the server is ready." -ForegroundColor Cyan
-Write-Host "    The station is always Box Station (set by the --cvar game.map=Box launch option)." -ForegroundColor Cyan
+Write-Host "    The map is chosen in play.bat (Box, or BoxColony with the expanded dorms)." -ForegroundColor Cyan
 Write-Host "    Join the round, then open the in-game console and try:" -ForegroundColor Cyan
 Write-Host "      setsatiation Hunger 80   (expect: Hungry -10)" -ForegroundColor Cyan
 Write-Host "      setsatiation Rest 20     (expect: Tired -10)" -ForegroundColor Cyan
@@ -37,14 +37,19 @@ Write-Host "    Press Ctrl+C in this window to stop the server. Full log: server
 Write-Host ""
 
 Remove-Item server.log, server.err, client.log -ErrorAction SilentlyContinue
-Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-NoExit", "-Command", "while (-not ((Test-Path server.log) -and (Select-String -Path server.log -Pattern '-> Ready' -Quiet -ErrorAction SilentlyContinue))) { Start-Sleep 1 }; Write-Host 'Server is ready, starting the game window...'; dotnet run --project Content.Client --no-build 2>&1 | Tee-Object -FilePath client.log; Write-Host 'The game window closed. Output is in client.log' "
+$script:clientStarted = $false
 
 # The server runs in a hidden window, so stray key presses can never crash it.
 $server = Start-Process dotnet -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput server.log -RedirectStandardError server.err `
-    -ArgumentList "run --project Content.Server --no-build -- --cvar game.map=Box --cvar colony.scenario=$Scenario"
+    -ArgumentList "run --project Content.Server --no-build -- --cvar game.map=$Map --cvar colony.scenario=$Scenario"
 
 function Show-Line($line) {
+    if ($line -match "-> Ready" -and -not $script:clientStarted) {
+        $script:clientStarted = $true
+        Write-Host "Server is ready, starting the game window..." -ForegroundColor Cyan
+        Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-NoExit", "-Command", "dotnet run --project Content.Client --no-build 2>&1 | Tee-Object -FilePath client.log"
+    }
     if ($line -match "\[ERRO\]|\[FATL\]") { Write-Host $line -ForegroundColor Red }
     elseif ($line -match "system\.mood|system\.colony|Server Version") { Write-Host $line -ForegroundColor Green }
 }

@@ -33,6 +33,19 @@ public sealed class ColonyLogUiSystem : EntitySystem
 
     private void OnLog(ColonyLogEvent ev)
     {
-        _panel?.AddLine(ev.Category, ev.Text);
+        _panel?.AddLine(ev.Category, ev.Text, ev.Size, ev.Source);
+    }
+
+    /// <summary>Limit the log to one colonist (or pass null to see everyone).</summary>
+    public void FocusOn(EntityUid? who)
+    {
+        if (who is not { } uid || !Exists(uid))
+        {
+            _panel?.FocusOn(null, null);
+            return;
+        }
+
+        var first = Name(uid).Split(' ')[0];
+        _panel?.FocusOn(GetNetEntity(uid), first);
     }
 }

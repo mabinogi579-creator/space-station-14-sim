@@ -7,7 +7,7 @@
 
 - type: satiation
   id: NormalSatiationRest
-  baseChangeRate: -0.5 # deliberately fast, so we can see it move while testing
+  baseChangeRate: -0.03 # about 55 minutes from full to empty. Make this bigger (-0.5) to test quickly
   maximumValue: 100
   alertCategory: Rest
   thresholds:

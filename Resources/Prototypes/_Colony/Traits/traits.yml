@@ -1,0 +1,56 @@
+# Personality traits. Each colonist gets one or two at the start of a round.
+# Multipliers: 1 = no change, 1.2 = 20% more, 0.8 = 20% less.
+
+- type: colonyTrait
+  id: Brisk
+  name: Brisk
+  description: Always in a hurry.
+  walkSpeed: 1.2
+  runSpeed: 1.15
+  conflicts: [ Slowpoke, Plodding ]
+
+- type: colonyTrait
+  id: Slowpoke
+  name: Slowpoke
+  description: Takes their time getting anywhere.
+  walkSpeed: 0.75
+  runSpeed: 0.8
+  conflicts: [ Brisk ]
+
+- type: colonyTrait
+  id: Plodding
+  name: Plodding
+  description: A slow, steady walker with a lot of patience.
+  walkSpeed: 0.9
+  runSpeed: 0.9
+  patience: 1.4
+  conflicts: [ Brisk ]
+
+- type: colonyTrait
+  id: Patient
+  name: Patient
+  description: Will happily wait in any line.
+  patience: 1.8
+  conflicts: [ Impatient ]
+
+- type: colonyTrait
+  id: Impatient
+  name: Impatient
+  description: Gives up on a line almost at once.
+  patience: 0.5
+  conflicts: [ Patient ]
+
+- type: colonyTrait
+  id: Clumsy
+  name: Clumsy
+  description: Fumbles with machines and buttons.
+  useTime: 1.8
+  conflicts: [ Nimble ]
+
+- type: colonyTrait
+  id: Nimble
+  name: Nimble
+  description: Quick fingers, quick feet.
+  walkSpeed: 1.05
+  useTime: 0.6
+  conflicts: [ Clumsy ]
