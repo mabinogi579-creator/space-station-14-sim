@@ -1,4 +1,5 @@
 using Content.Shared._Colony.Mood;
+using Content.Shared._Colony.Overseer;
 using Content.Shared.Nutrition.EntitySystems;
 using Content.Shared.Verbs;
 using Robust.Client.UserInterface;
@@ -26,7 +27,7 @@ public sealed class MoodUiSystem : EntitySystem
         SubscribeLocalEvent<ColonyMoodComponent, GetVerbsEvent<AlternativeVerb>>(OnGetVerbs);
 
         // The colonist bar: a strip of portraits across the top of the screen.
-        _bar = new ColonistBar(EntityManager, OpenWindow);
+        _bar = new ColonistBar(EntityManager, OpenWindow, Follow);
         LayoutContainer.SetAnchorAndMarginPreset(_bar, LayoutContainer.LayoutPreset.CenterTop, margin: 8);
         LayoutContainer.SetGrowHorizontal(_bar, LayoutContainer.GrowDirection.Both);
         _ui.WindowRoot.AddChild(_bar);
@@ -54,6 +55,12 @@ public sealed class MoodUiSystem : EntitySystem
             ClientExclusive = true,
             Act = () => OpenWindow(target),
         });
+    }
+
+    private void Follow(EntityUid target)
+    {
+        _window?.Close();
+        RaiseNetworkEvent(new ColonyFollowRequest(GetNetEntity(target)));
     }
 
     public void OpenWindow(EntityUid target)

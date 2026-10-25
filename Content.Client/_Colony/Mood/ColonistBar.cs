@@ -10,7 +10,7 @@ namespace Content.Client._Colony.Mood;
 
 /// <summary>
 /// A RimWorld-style strip across the top of the screen: one portrait per colonist with a mood bar.
-/// Click a portrait to open that colonist's mood window.
+/// Click a portrait to open that colonist's mood window; double-click to jump to them and follow.
 /// </summary>
 public sealed class ColonistBar : BoxContainer
 {
@@ -22,14 +22,19 @@ public sealed class ColonistBar : BoxContainer
 
     private readonly IEntityManager _entMan;
     private readonly Action<EntityUid> _onClick;
+    private readonly Action<EntityUid> _onDoubleClick;
+    private EntityUid _lastClicked;
+    private float _clock;
+    private float _lastClickTime;
     private bool _built;
     private readonly List<EntityUid> _shown = new();
     private readonly Dictionary<EntityUid, ProgressBar> _bars = new();
 
-    public ColonistBar(IEntityManager entMan, Action<EntityUid> onClick)
+    public ColonistBar(IEntityManager entMan, Action<EntityUid> onClick, Action<EntityUid> onDoubleClick)
     {
         _entMan = entMan;
         _onClick = onClick;
+        _onDoubleClick = onDoubleClick;
         Orientation = LayoutOrientation.Horizontal;
         SeparationOverride = 4;
     }
@@ -37,6 +42,7 @@ public sealed class ColonistBar : BoxContainer
     protected override void FrameUpdate(FrameEventArgs args)
     {
         base.FrameUpdate(args);
+        _clock += args.DeltaSeconds;
 
         // Work out who should be on the bar right now.
         var current = new List<EntityUid>();
@@ -98,7 +104,21 @@ public sealed class ColonistBar : BoxContainer
 
             var button = new ContainerButton();
             button.AddChild(column);
-            button.OnPressed += _ => _onClick(target);
+            button.OnPressed += _ =>
+            {
+                // Two clicks on the same portrait within half a second = double click.
+                var now = _clock;
+                if (_lastClicked == target && now - _lastClickTime < 0.5f)
+                {
+                    _lastClicked = default;
+                    _onDoubleClick(target);
+                    return;
+                }
+
+                _lastClicked = target;
+                _lastClickTime = now;
+                _onClick(target);
+            };
             AddChild(button);
         }
     }

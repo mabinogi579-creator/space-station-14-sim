@@ -1,6 +1,7 @@
 using Content.Server.GameTicking;
 using Content.Server.NPC.HTN;
 using Content.Server.NPC.Systems;
+using Content.Shared._Colony.Diet;
 using Content.Shared._Colony.Setup;
 using Content.Shared.GameTicking;
 using Content.Shared.Preferences;
@@ -96,6 +97,7 @@ public sealed class ColonySetupSystem : EntitySystem
                 }
 
                 crew.Add(mob.Value);
+                EnsureComp<ColonyDietComponent>(mob.Value);
 
                 // Give them a brain: eat when hungry, otherwise wander.
                 var brain = EnsureComp<HTNComponent>(mob.Value);

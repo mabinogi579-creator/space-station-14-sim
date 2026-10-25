@@ -22,7 +22,19 @@
 - type: htnCompound
   id: ColonistEatCompound
   branches:
-    # Food lying around.
+    # Already carrying something: go and eat it somewhere quiet.
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Hunger
+          below: Peckish
+        - !type:HoldingFoodPrecondition
+          edibleType: Food
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickEatingSpotOperator
+        - !type:HTNCompoundTask
+          task: ColonistEatFoodAtSpotCompound
+    # Food lying around: walk over and pick it up.
     - preconditions:
         - !type:SatiationPrecondition
           satiationType: Hunger
@@ -32,7 +44,7 @@
           operator: !type:PickLooseEdibleOperator
             edibleType: Food
         - !type:HTNCompoundTask
-          task: ColonistWalkAndEatCompound
+          task: ColonistWalkAndGrabCompound
     # Buy something from a vending machine. The next planning round finds the dropped item.
     - preconditions:
         - !type:SatiationPrecondition
@@ -52,12 +64,23 @@
         - !type:SatiationPrecondition
           satiationType: Thirst
           below: Parched
+        - !type:HoldingFoodPrecondition
+          edibleType: Drink
+      tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:PickEatingSpotOperator
+        - !type:HTNCompoundTask
+          task: ColonistEatDrinkAtSpotCompound
+    - preconditions:
+        - !type:SatiationPrecondition
+          satiationType: Thirst
+          below: Parched
       tasks:
         - !type:HTNPrimitiveTask
           operator: !type:PickLooseEdibleOperator
             edibleType: Drink
         - !type:HTNCompoundTask
-          task: ColonistWalkAndEatCompound
+          task: ColonistWalkAndGrabCompound
     - preconditions:
         - !type:SatiationPrecondition
           satiationType: Thirst
@@ -70,7 +93,7 @@
           task: ColonistWalkAndVendCompound
 
 - type: htnCompound
-  id: ColonistWalkAndEatCompound
+  id: ColonistWalkAndGrabCompound
   branches:
     - tasks:
         - !type:HTNPrimitiveTask
@@ -81,13 +104,59 @@
             pathfindKey: TargetPathfind
             rangeKey: MeleeRange
         - !type:HTNPrimitiveTask
-          operator: !type:ColonistEatOperator
+          operator: !type:ColonistGrabOperator
         - !type:HTNPrimitiveTask
           preconditions:
             - !type:KeyExistsPrecondition
               key: IdleTime
           operator: !type:WaitOperator
             key: IdleTime
+
+- type: htnCompound
+  id: ColonistEatFoodAtSpotCompound
+  branches:
+    - tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: MeleeRange
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistEatHeldOperator
+            edibleType: Food
+        - !type:HTNPrimitiveTask
+          preconditions:
+            - !type:KeyExistsPrecondition
+              key: IdleTime
+          operator: !type:WaitOperator
+            key: IdleTime
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistStandUpOperator
+
+- type: htnCompound
+  id: ColonistEatDrinkAtSpotCompound
+  branches:
+    - tasks:
+        - !type:HTNPrimitiveTask
+          operator: !type:MoveToOperator
+            pathfindInPlanning: true
+            removeKeyOnFinish: false
+            targetKey: TargetCoordinates
+            pathfindKey: TargetPathfind
+            rangeKey: MeleeRange
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistEatHeldOperator
+            edibleType: Drink
+        - !type:HTNPrimitiveTask
+          preconditions:
+            - !type:KeyExistsPrecondition
+              key: IdleTime
+          operator: !type:WaitOperator
+            key: IdleTime
+        - !type:HTNPrimitiveTask
+          operator: !type:ColonistStandUpOperator
 
 - type: htnCompound
   id: ColonistWalkAndVendCompound

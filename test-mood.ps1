@@ -7,8 +7,16 @@ Get-Process Content.Server, Content.Client -ErrorAction SilentlyContinue | Stop-
 Start-Sleep -Seconds 1
 
 Write-Host "2/3 Building (about 30 to 60 seconds)..." -ForegroundColor Cyan
-dotnet build *> build.log
-if ($LASTEXITCODE -ne 0) {
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+# Only build the two programs we run (not the tests and tools in the same solution).
+dotnet build Content.Server\Content.Server.csproj *> build.log
+$serverOk = ($LASTEXITCODE -eq 0)
+if ($serverOk) {
+    dotnet build Content.Client\Content.Client.csproj *>> build.log
+    $serverOk = ($LASTEXITCODE -eq 0)
+}
+Write-Host ("Build took {0:N0} seconds." -f $sw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
+if (-not $serverOk) {
     Write-Host "BUILD FAILED. First errors:" -ForegroundColor Red
     Select-String -Path build.log -Pattern "error " | Select-Object -First 10 | ForEach-Object { $_.Line.Trim() }
     Write-Host "Send me those lines. The full output is in build.log." -ForegroundColor Yellow
@@ -28,8 +36,8 @@ Write-Host "    Mood lines appear below within a second or two. Errors show in r
 Write-Host "    Press Ctrl+C in this window to stop the server. Full log: server.log" -ForegroundColor Cyan
 Write-Host ""
 
-Remove-Item server.log, server.err -ErrorAction SilentlyContinue
-Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-Command", "while (-not ((Test-Path server.log) -and (Select-String -Path server.log -Pattern '-> Ready' -Quiet -ErrorAction SilentlyContinue))) { Start-Sleep 1 }; dotnet run --project Content.Client --no-build"
+Remove-Item server.log, server.err, client.log -ErrorAction SilentlyContinue
+Start-Process powershell -WorkingDirectory $PSScriptRoot -ArgumentList "-NoProfile", "-NoExit", "-Command", "while (-not ((Test-Path server.log) -and (Select-String -Path server.log -Pattern '-> Ready' -Quiet -ErrorAction SilentlyContinue))) { Start-Sleep 1 }; Write-Host 'Server is ready, starting the game window...'; dotnet run --project Content.Client --no-build 2>&1 | Tee-Object -FilePath client.log; Write-Host 'The game window closed. Output is in client.log' "
 
 # The server runs in a hidden window, so stray key presses can never crash it.
 $server = Start-Process dotnet -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru `

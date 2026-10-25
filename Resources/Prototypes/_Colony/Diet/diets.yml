@@ -1,0 +1,43 @@
+- type: colonyDiet
+  id: Omnivore
+  name: Omnivore
+  description: Eats any real food.
+
+- type: colonyDiet
+  id: Vegetarian
+  name: Vegetarian
+  description: No meat or fish.
+  forbidden:
+  - Meat
+  - Steak
+  - Cutlet
+  - Bacon
+  - Sausage
+  - Fish
+  - Carp
+  - Shark
+  - Kebab
+  - Nugget
+  - Crab
+  - Shrimp
+  - Salami
+  - Ham
+
+- type: colonyDiet
+  id: Carnivore
+  name: Carnivore
+  description: Prefers meat and fish, and still eats anything else when starving.
+  favorites:
+  - Meat
+  - Steak
+  - Cutlet
+  - Bacon
+  - Sausage
+  - Fish
+  - Kebab
+
+- type: colonyDiet
+  id: MothGourmet
+  name: Moth gourmet
+  description: Happily nibbles on clothing.
+  eatClothing: true
