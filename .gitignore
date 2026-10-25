@@ -319,3 +319,8 @@ error.glsl
 
 # C# Dev Kit cache file
 *.lscache
+
+# Colony: our Log folders must be tracked (the rule above hides folders named Log)
+!/Content.Server/_Colony/Log/
+!/Content.Client/_Colony/Log/
+!/Content.Shared/_Colony/Log/
